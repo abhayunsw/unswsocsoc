@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import logoWhite from '../assets/logo-transparent-white.png'
+import { useAuth } from '../context/AuthContext'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const location = useLocation()
+  const { user, signOut } = useAuth()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -57,10 +59,35 @@ export default function Navbar() {
             href="https://www.instagram.com/unswsocsoc"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-sans text-xs tracking-[0.2em] uppercase text-shade1 hover:text-secondary transition-colors nav-link"
+            className="nav-link font-sans text-xs tracking-[0.2em] uppercase text-shade1 hover:text-secondary transition-colors"
           >
             Instagram
           </a>
+
+          {/* Divider */}
+          <div className="w-px h-4 bg-white/10" />
+
+          {/* Auth */}
+          {user ? (
+            <div className="flex items-center gap-6">
+              <span className="font-sans text-[10px] tracking-widest text-shade1 max-w-[160px] truncate">
+                {user.email}
+              </span>
+              <button
+                onClick={signOut}
+                className="font-sans text-xs tracking-[0.2em] uppercase text-shade1 hover:text-secondary transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/admin/login"
+              className="font-sans text-xs tracking-[0.2em] uppercase text-shade1/40 hover:text-shade1 transition-colors"
+            >
+              Admin
+            </Link>
+          )}
         </div>
 
         {/* Mobile burger */}
@@ -76,7 +103,7 @@ export default function Navbar() {
       </div>
 
       {/* Mobile menu */}
-      <div className={`md:hidden transition-all duration-400 overflow-hidden ${menuOpen ? 'max-h-64' : 'max-h-0'}`}>
+      <div className={`md:hidden transition-all duration-400 overflow-hidden ${menuOpen ? 'max-h-80' : 'max-h-0'}`}>
         <div className="bg-black/95 backdrop-blur-sm border-t border-white/5 px-6 pb-6 pt-4 flex flex-col gap-5">
           {links.map(({ to, label }) => (
             <Link
@@ -95,6 +122,29 @@ export default function Navbar() {
           >
             Instagram
           </a>
+
+          <div className="w-full h-px bg-white/5" />
+
+          {user ? (
+            <>
+              <span className="font-sans text-[11px] tracking-widest text-shade1/60 truncate">
+                {user.email}
+              </span>
+              <button
+                onClick={signOut}
+                className="font-sans text-sm tracking-[0.2em] uppercase text-shade1 hover:text-secondary transition-colors text-left"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/admin/login"
+              className="font-sans text-sm tracking-[0.2em] uppercase text-shade1/40 hover:text-shade1 transition-colors"
+            >
+              Admin
+            </Link>
+          )}
         </div>
       </div>
     </nav>

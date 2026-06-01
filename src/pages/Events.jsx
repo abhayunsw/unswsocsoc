@@ -1,17 +1,54 @@
-import { events } from '../data/events.js'
+import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 import EventCard from '../components/EventCard.jsx'
+import AddEventModal from '../components/AddEventModal.jsx'
 
 export default function Events() {
+  const { user } = useAuth()
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+
+  const fetchEvents = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('date', { ascending: true })
+    if (!error) setEvents(data ?? [])
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { fetchEvents() }, [fetchEvents])
+
+  const handleDelete = async id => {
+    if (!confirm('Delete this event? This cannot be undone.')) return
+    await supabase.from('events').delete().eq('id', id)
+    fetchEvents()
+  }
+
   return (
     <div className="min-h-screen pt-20">
 
       {/* ── Header ──────────────────────────────── */}
       <div className="border-b border-white/10 px-6 md:px-12 py-10 md:py-16 max-w-7xl mx-auto">
-        <p className="font-display text-[11px] tracking-[0.35em] text-accent uppercase mb-3">This Term</p>
-        <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl text-secondary mb-4">Upcoming Events</h1>
-        <p className="font-serif text-lg text-shade1 italic max-w-xl">
-          Join us each week as we tackle a new question. No experience in philosophy required — only curiosity.
-        </p>
+        <div className="flex items-end justify-between gap-4 flex-wrap">
+          <div>
+            <p className="font-display text-[11px] tracking-[0.35em] text-accent uppercase mb-3">This Term</p>
+            <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl text-secondary mb-4">Upcoming Events</h1>
+            <p className="font-serif text-lg text-shade1 italic max-w-xl">
+              Join us each week as we tackle a new question. No experience in philosophy required — only curiosity.
+            </p>
+          </div>
+          {user && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="font-sans text-xs tracking-[0.25em] uppercase text-secondary border border-secondary/30 hover:bg-secondary hover:text-primary px-6 py-3 transition-all duration-300 shrink-0"
+            >
+              + Add Event
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── How events work ─────────────────────── */}
@@ -35,19 +72,32 @@ export default function Events() {
 
       {/* ── Events grid ─────────────────────────── */}
       <div className="px-6 md:px-12 py-16 max-w-7xl mx-auto">
-        {events.length === 0 ? (
+        {loading ? (
+          <p className="font-serif text-xl text-shade1 italic text-center py-20">Loading…</p>
+        ) : events.length === 0 ? (
           <p className="font-serif text-xl text-shade1 italic text-center py-20">
             No events scheduled yet. Check back soon.
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {events.map(event => (
-              <EventCard key={event.id} event={event} />
+              <EventCard
+                key={event.id}
+                event={event}
+                onDelete={user ? () => handleDelete(event.id) : null}
+              />
             ))}
           </div>
         )}
       </div>
 
+      {/* ── Add event modal ──────────────────────── */}
+      {showModal && (
+        <AddEventModal
+          onClose={() => setShowModal(false)}
+          onEventAdded={fetchEvents}
+        />
+      )}
     </div>
   )
 }

@@ -1,12 +1,36 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import heroBanner from '../assets/banner-school-of-athens.jpg'
 import deathOfSocrates from '../assets/banner-death-of-socrates.jpg'
-import { events } from '../data/events.js'
+import { supabase } from '../lib/supabase'
 import EventCard from '../components/EventCard.jsx'
 
 export default function Home() {
-  // Show only the next 1 upcoming event on the homepage
-  const nextEvent = events.find(e => new Date(e.date) >= new Date()) || events[0]
+  const [nextEvent, setNextEvent] = useState(null)
+
+  useEffect(() => {
+    const fetchNext = async () => {
+      // Try to find the next upcoming event
+      let { data } = await supabase
+        .from('events')
+        .select('*')
+        .gte('date', new Date().toISOString())
+        .order('date', { ascending: true })
+        .limit(1)
+
+      // Fall back to the most recent past event
+      if (!data?.length) {
+        ;({ data } = await supabase
+          .from('events')
+          .select('*')
+          .order('date', { ascending: false })
+          .limit(1))
+      }
+
+      if (data?.length) setNextEvent(data[0])
+    }
+    fetchNext()
+  }, [])
 
   return (
     <div className="flex flex-col">
@@ -18,9 +42,7 @@ export default function Home() {
           alt="School of Athens"
           className="absolute inset-0 w-full h-full object-cover object-center"
         />
-        {/* Dark gradient from bottom */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-        {/* Top gradient for nav readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pb-20 md:pb-28 w-full">
@@ -86,7 +108,11 @@ export default function Home() {
         </div>
 
         <div className="max-w-lg">
-          <EventCard event={nextEvent} />
+          {nextEvent ? (
+            <EventCard event={nextEvent} />
+          ) : (
+            <p className="font-serif text-xl text-shade1 italic">No events scheduled yet.</p>
+          )}
         </div>
       </section>
 

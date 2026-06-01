@@ -1,10 +1,7 @@
-// EventCard — reads a single event object from /src/data/events.js
-// No changes needed here when adding new events.
-
 const TYPE_LABELS = {
-  'Discussion':              'Discussion',
-  'Collaborative Discussion': 'Collab',
-  'Lecture':                 'Lecture',
+  'Discussion':               'Discussion',
+  'Collaborative Discussion':  'Collab',
+  'Lecture':                   'Lecture',
 }
 
 function formatDate(isoString) {
@@ -20,7 +17,7 @@ function isReleased(isoString) {
   return new Date() >= new Date(isoString)
 }
 
-export default function EventCard({ event }) {
+export default function EventCard({ event, onDelete }) {
   const { day, date, time } = formatDate(event.date)
   const released = isReleased(event.date)
 
@@ -29,11 +26,18 @@ export default function EventCard({ event }) {
 
       {/* Poster image */}
       <div className="relative overflow-hidden aspect-video">
-        <img
-          src={event.image}
-          alt={event.title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
+        {event.image_url ? (
+          <img
+            src={event.image_url}
+            alt={event.title}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full bg-shade2/40 flex items-center justify-center">
+            <span className="font-serif text-6xl text-shade1/20 italic select-none">Φ</span>
+          </div>
+        )}
+
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
@@ -46,6 +50,16 @@ export default function EventCard({ event }) {
             {TYPE_LABELS[event.type] || event.type}
           </span>
         </div>
+
+        {/* Admin delete button */}
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            className="absolute top-4 right-4 font-sans text-[10px] tracking-widest uppercase text-shade1 hover:text-secondary bg-black/80 border border-white/10 hover:border-secondary/30 px-3 py-1 transition-all duration-200"
+          >
+            Delete
+          </button>
+        )}
       </div>
 
       {/* Info */}
@@ -71,9 +85,9 @@ export default function EventCard({ event }) {
 
         {/* Discussion questions */}
         <div className="mt-auto pt-4 border-t border-white/10">
-          {event.questionDoc && released ? (
+          {event.question_doc && released ? (
             <a
-              href={`/src/assets/questions/${event.questionDoc}`}
+              href={`/src/assets/questions/${event.question_doc}`}
               download
               className="inline-flex items-center gap-2 font-sans text-xs tracking-[0.2em] uppercase text-secondary hover:text-accent border border-secondary/30 hover:border-accent px-4 py-2.5 transition-all duration-300"
             >
@@ -88,10 +102,9 @@ export default function EventCard({ event }) {
             </p>
           )}
 
-          {/* Instagram link */}
-          {event.instagramPost && (
+          {event.instagram_post && (
             <a
-              href={event.instagramPost}
+              href={event.instagram_post}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-flex items-center gap-2 font-sans text-[11px] tracking-widest text-shade1 hover:text-secondary uppercase transition-colors"
