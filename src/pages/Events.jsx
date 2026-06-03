@@ -9,6 +9,7 @@ export default function Events() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [editingEvent, setEditingEvent] = useState(null)
 
   const fetchEvents = useCallback(async () => {
     const { data, error } = await supabase
@@ -85,6 +86,7 @@ export default function Events() {
                 key={event.id}
                 event={event}
                 onDelete={user ? () => handleDelete(event.id) : null}
+                onEdit={user ? () => setEditingEvent(event) : null}
               />
             ))}
           </div>
@@ -95,6 +97,15 @@ export default function Events() {
       {showModal && (
         <AddEventModal
           onClose={() => setShowModal(false)}
+          onEventAdded={fetchEvents}
+        />
+      )}
+
+      {/* ── Edit event modal ─────────────────────── */}
+      {editingEvent && (
+        <AddEventModal
+          event={editingEvent}
+          onClose={() => setEditingEvent(null)}
           onEventAdded={fetchEvents}
         />
       )}

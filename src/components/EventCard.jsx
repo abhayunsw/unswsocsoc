@@ -17,7 +17,7 @@ function isReleased(isoString) {
   return new Date() >= new Date(isoString)
 }
 
-export default function EventCard({ event, onDelete }) {
+export default function EventCard({ event, onDelete, onEdit }) {
   const { day, date, time } = formatDate(event.date)
   const released = isReleased(event.date)
 
@@ -38,7 +38,6 @@ export default function EventCard({ event, onDelete }) {
           </div>
         )}
 
-        {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
         {/* Week + type badge */}
@@ -51,21 +50,32 @@ export default function EventCard({ event, onDelete }) {
           </span>
         </div>
 
-        {/* Admin delete button */}
-        {onDelete && (
-          <button
-            onClick={onDelete}
-            className="absolute top-4 right-4 font-sans text-[10px] tracking-widest uppercase text-shade1 hover:text-secondary bg-black/80 border border-white/10 hover:border-secondary/30 px-3 py-1 transition-all duration-200"
-          >
-            Delete
-          </button>
+        {/* Admin controls */}
+        {(onEdit || onDelete) && (
+          <div className="absolute top-4 right-4 flex gap-2">
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="font-sans text-[10px] tracking-widest uppercase text-shade1 hover:text-secondary bg-black/80 border border-white/10 hover:border-secondary/30 px-3 py-1 transition-all duration-200"
+              >
+                Edit
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={onDelete}
+                className="font-sans text-[10px] tracking-widest uppercase text-shade1 hover:text-secondary bg-black/80 border border-white/10 hover:border-secondary/30 px-3 py-1 transition-all duration-200"
+              >
+                Delete
+              </button>
+            )}
+          </div>
         )}
       </div>
 
       {/* Info */}
       <div className="p-6 flex flex-col gap-4 flex-1">
 
-        {/* Date + time row */}
         <div className="flex items-center gap-3">
           <div className="text-center min-w-[48px]">
             <p className="font-display text-[10px] tracking-widest text-shade1 uppercase">{day}</p>
@@ -78,17 +88,16 @@ export default function EventCard({ event, onDelete }) {
           </div>
         </div>
 
-        {/* Title */}
         <h3 className="font-serif text-2xl md:text-3xl text-secondary italic leading-snug">
           "{event.title}"
         </h3>
 
-        {/* Discussion questions */}
         <div className="mt-auto pt-4 border-t border-white/10">
           {event.question_doc && released ? (
             <a
-              href={`/src/assets/questions/${event.question_doc}`}
-              download
+              href={event.question_doc}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 font-sans text-xs tracking-[0.2em] uppercase text-secondary hover:text-accent border border-secondary/30 hover:border-accent px-4 py-2.5 transition-all duration-300"
             >
               <span>↓</span>

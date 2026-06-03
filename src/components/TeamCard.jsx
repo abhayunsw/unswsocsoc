@@ -1,27 +1,45 @@
-// TeamCard — reads from /src/data/team.js
-// No changes needed here when updating team members.
-
-export default function TeamCard({ member }) {
+export default function TeamCard({ member, onEdit, onDelete }) {
   return (
     <div className="team-card group relative overflow-hidden bg-shade2/20 border border-white/10 transition-all duration-300 hover:border-accent/40">
 
       {/* Photo / placeholder */}
       <div className="aspect-square relative overflow-hidden bg-shade2/40">
-        {member.photo ? (
+        {member.photo_url ? (
           <img
-            src={member.photo}
+            src={member.photo_url}
             alt={member.name}
             className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            {/* Elegant initials placeholder */}
             <span className="font-serif text-5xl text-shade1/40 italic select-none">
               {member.name.split(' ').map(n => n[0]).join('')}
             </span>
           </div>
         )}
         <div className="team-overlay absolute inset-0 bg-accent/10 opacity-0 transition-opacity duration-300" />
+
+        {/* Admin controls */}
+        {(onEdit || onDelete) && (
+          <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="font-sans text-[10px] tracking-widest uppercase text-shade1 hover:text-secondary bg-black/80 border border-white/10 hover:border-secondary/30 px-2.5 py-1 transition-all duration-200"
+              >
+                Edit
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={onDelete}
+                className="font-sans text-[10px] tracking-widest uppercase text-shade1 hover:text-secondary bg-black/80 border border-white/10 hover:border-secondary/30 px-2.5 py-1 transition-all duration-200"
+              >
+                Delete
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Info */}

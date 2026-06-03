@@ -70,3 +70,47 @@ insert into public.events (week, type, title, date, location) values
 -- 6. Create admin user (do this in: Authentication → Users → Invite / Add user)
 --    Email: abhayunsw@gmail.com  (or whatever you prefer)
 --    Set a strong password there — do NOT store passwords in SQL.
+
+-- ============================================================
+-- NEW: Team table — run this section in a new SQL Editor tab
+-- ============================================================
+
+-- 7. Team table
+create table if not exists public.team (
+  id            uuid        primary key default gen_random_uuid(),
+  name          text        not null,
+  role          text        not null,
+  photo_url     text,
+  display_order integer     not null default 0,
+  created_at    timestamptz default now()
+);
+
+-- 8. Row-level security (write access restricted to site owner only)
+alter table public.team enable row level security;
+
+create policy "Public can read team"
+  on public.team for select
+  using (true);
+
+create policy "Owner can insert team"
+  on public.team for insert
+  with check (auth.email() = 'abhayunsw@gmail.com');
+
+create policy "Owner can update team"
+  on public.team for update
+  using (auth.email() = 'abhayunsw@gmail.com');
+
+create policy "Owner can delete team"
+  on public.team for delete
+  using (auth.email() = 'abhayunsw@gmail.com');
+
+-- 9. Seed: existing exec team
+insert into public.team (name, role, display_order) values
+  ('Gabriel Kennedy', 'President',               0),
+  ('Sophie Johnstone','Vice President',           1),
+  ('Anna O''Regan',   'Secretary',                2),
+  ('Abhay Sharma',    'Digital Content Director', 3),
+  ('Nicole Bayona',   'Compliance Officer',       4),
+  ('Wilson Haski',    'Marketing Director',       5),
+  ('Ben Supit',       'Treasurer',                6),
+  ('M Anik Ali',      'Event Director',           7);
