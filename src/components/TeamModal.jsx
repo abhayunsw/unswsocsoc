@@ -2,14 +2,20 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 function blankForm() {
-  return { name: '', role: '', display_order: '0' }
+  return {
+    name: '', role: '', display_order: '0',
+    degree: '', why_exec: '', fav_philosophy: '',
+  }
 }
 
 function formFromMember(member) {
   return {
-    name:          member.name ?? '',
-    role:          member.role ?? '',
+    name:          member.name          ?? '',
+    role:          member.role          ?? '',
     display_order: member.display_order?.toString() ?? '0',
+    degree:        member.degree        ?? '',
+    why_exec:      member.why_exec      ?? '',
+    fav_philosophy:member.fav_philosophy?? '',
   }
 }
 
@@ -44,10 +50,13 @@ export default function TeamModal({ onClose, onSaved, member = null }) {
       }
 
       const payload = {
-        name:          form.name,
-        role:          form.role,
+        name:           form.name,
+        role:           form.role,
         photo_url,
-        display_order: parseInt(form.display_order) || 0,
+        display_order:  parseInt(form.display_order) || 0,
+        degree:         form.degree        || null,
+        why_exec:       form.why_exec      || null,
+        fav_philosophy: form.fav_philosophy|| null,
       }
 
       if (isEdit) {
@@ -77,7 +86,7 @@ export default function TeamModal({ onClose, onSaved, member = null }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-[#080808] border border-white/10 w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-[#080808] border border-white/10 w-full max-w-lg max-h-[90vh] overflow-y-auto">
 
         <div className="px-8 py-6 border-b border-white/10 flex items-center justify-between">
           <div>
@@ -97,41 +106,64 @@ export default function TeamModal({ onClose, onSaved, member = null }) {
 
         <form onSubmit={handleSubmit} className="px-8 py-6 flex flex-col gap-5">
 
+          {/* Name + Role */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Name</label>
+              <input
+                type="text" required value={form.name} onChange={set('name')}
+                placeholder="Jane Smith" className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Role</label>
+              <input
+                type="text" required value={form.role} onChange={set('role')}
+                placeholder="Vice President" className={inputClass}
+              />
+            </div>
+          </div>
+
+          {/* Degree + Order */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Degree</label>
+              <input
+                type="text" value={form.degree} onChange={set('degree')}
+                placeholder="3rd year, B Economics" className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Display Order</label>
+              <input
+                type="number" min="0" value={form.display_order}
+                onChange={set('display_order')} className={inputClass}
+              />
+            </div>
+          </div>
+
+          {/* Favourite philosophy */}
           <div>
-            <label className={labelClass}>Name</label>
+            <label className={labelClass}>Favourite Philosophy</label>
             <input
-              type="text"
-              required
-              value={form.name}
-              onChange={set('name')}
-              placeholder="Jane Smith"
-              className={inputClass}
+              type="text" value={form.fav_philosophy} onChange={set('fav_philosophy')}
+              placeholder="Stoicism, Marcus Aurelius" className={inputClass}
             />
           </div>
 
+          {/* Why exec */}
           <div>
-            <label className={labelClass}>Role</label>
-            <input
-              type="text"
-              required
-              value={form.role}
-              onChange={set('role')}
-              placeholder="Vice President"
-              className={inputClass}
+            <label className={labelClass}>Why did you join exec?</label>
+            <textarea
+              value={form.why_exec}
+              onChange={set('why_exec')}
+              rows={4}
+              placeholder="I joined because…"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
-          <div>
-            <label className={labelClass}>Display Order</label>
-            <input
-              type="number"
-              min="0"
-              value={form.display_order}
-              onChange={set('display_order')}
-              className={inputClass}
-            />
-          </div>
-
+          {/* Photo */}
           <div>
             <label className={labelClass}>
               Photo{isEdit && member.photo_url ? ' — leave blank to keep existing' : ''}

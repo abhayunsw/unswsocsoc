@@ -6,30 +6,52 @@ import { supabase } from '../lib/supabase'
 import EventCard from '../components/EventCard.jsx'
 
 export default function Home() {
-  const [nextEvent, setNextEvent] = useState(null)
+  const [weekEvents, setWeekEvents] = useState([])
+  const [currentWeek, setCurrentWeek] = useState(null)
 
   useEffect(() => {
-    const fetchNext = async () => {
-      // Try to find the next upcoming event
-      let { data } = await supabase
+    const fetchWeekEvents = async () => {
+      // Start of current calendar week (Monday 00:00 local time)
+      const now = new Date()
+      const dayOfWeek = now.getDay() // 0 = Sun
+      const monday = new Date(now)
+      monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+      monday.setHours(0, 0, 0, 0)
+
+      // Find the week number of the first event on or after Monday this week
+      let { data: anchor } = await supabase
         .from('events')
-        .select('*')
-        .gte('date', new Date().toISOString())
+        .select('week')
+        .gte('date', monday.toISOString())
         .order('date', { ascending: true })
         .limit(1)
 
-      // Fall back to the most recent past event
-      if (!data?.length) {
-        ;({ data } = await supabase
+      let weekNum = anchor?.[0]?.week
+
+      // If nothing this week or later, fall back to the most recent past week
+      if (!weekNum) {
+        let { data: past } = await supabase
           .from('events')
-          .select('*')
+          .select('week')
+          .lt('date', monday.toISOString())
           .order('date', { ascending: false })
-          .limit(1))
+          .limit(1)
+        weekNum = past?.[0]?.week
       }
 
-      if (data?.length) setNextEvent(data[0])
+      if (!weekNum) return
+
+      // Fetch all events for that term week
+      const { data } = await supabase
+        .from('events')
+        .select('*')
+        .eq('week', weekNum)
+        .order('date', { ascending: true })
+
+      setCurrentWeek(weekNum)
+      setWeekEvents(data ?? [])
     }
-    fetchNext()
+    fetchWeekEvents()
   }, [])
 
   return (
@@ -92,12 +114,14 @@ export default function Home() {
         `}</style>
       </section>
 
-      {/* ── Next event spotlight ─────────────────── */}
+      {/* ── This week's events ───────────────────── */}
       <section className="py-16 md:py-32 px-6 md:px-12 max-w-7xl mx-auto w-full">
         <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
           <div>
-            <p className="font-display text-[11px] tracking-[0.35em] text-accent uppercase mb-3">Next Event</p>
-            <h2 className="font-serif text-4xl md:text-5xl text-secondary">Coming Up</h2>
+            <p className="font-display text-[11px] tracking-[0.35em] text-accent uppercase mb-3">
+              {currentWeek ? `Week ${currentWeek}` : 'This Term'}
+            </p>
+            <h2 className="font-serif text-4xl md:text-5xl text-secondary">This Week</h2>
           </div>
           <Link
             to="/events"
@@ -107,13 +131,15 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="max-w-lg">
-          {nextEvent ? (
-            <EventCard event={nextEvent} />
-          ) : (
-            <p className="font-serif text-xl text-shade1 italic">No events scheduled yet.</p>
-          )}
-        </div>
+        {weekEvents.length > 0 ? (
+          <div className={`grid gap-8 ${weekEvents.length === 1 ? 'max-w-lg' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
+            {weekEvents.map(event => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
+        ) : (
+          <p className="font-serif text-xl text-shade1 italic">No events scheduled yet.</p>
+        )}
       </section>
 
       {/* ── About strip with Death of Socrates ───── */}

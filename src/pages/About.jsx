@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import TeamCard from '../components/TeamCard.jsx'
 import TeamModal from '../components/TeamModal.jsx'
+import TeamMemberModal from '../components/TeamMemberModal.jsx'
 import heroBanner from '../assets/banner-school-of-athens.jpg'
 
 const ADMIN_EMAIL = 'abhayunsw@gmail.com'
@@ -14,6 +15,7 @@ export default function About() {
   const [team, setTeam] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [editingMember, setEditingMember] = useState(null)
+  const [selectedMember, setSelectedMember] = useState(null)
 
   const fetchTeam = useCallback(async () => {
     const { data } = await supabase
@@ -115,12 +117,21 @@ export default function About() {
             <TeamCard
               key={member.id}
               member={member}
+              onSelect={() => setSelectedMember(member)}
               onEdit={isAdmin ? () => setEditingMember(member) : null}
               onDelete={isAdmin ? () => handleDelete(member.id) : null}
             />
           ))}
         </div>
       </div>
+
+      {/* ── Member profile modal ────────────────────── */}
+      {selectedMember && (
+        <TeamMemberModal
+          member={selectedMember}
+          onClose={() => setSelectedMember(null)}
+        />
+      )}
 
       {/* ── Add member modal ─────────────────────── */}
       {showModal && (
