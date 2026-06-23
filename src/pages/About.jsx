@@ -43,7 +43,8 @@ export default function About() {
           alt="School of Athens"
           className="w-full h-full object-cover object-top"
         />
-        <div className="absolute inset-0 bg-linear-to-b from-black/40 via-black/40 to-black" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-black/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
         <div className="absolute inset-0 flex items-end px-6 md:px-12 pb-12 max-w-7xl mx-auto">
           <div>
             <p className="font-display text-[11px] tracking-[0.35em] text-accent uppercase mb-2">UNSW Arc Club</p>
@@ -100,7 +101,8 @@ export default function About() {
         <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
           <div>
             <p className="font-display text-[11px] tracking-[0.35em] text-accent uppercase mb-3">The People</p>
-            <h2 className="font-serif text-3xl md:text-5xl text-secondary">Executive Team 2025</h2>
+            <h2 className="font-serif text-3xl md:text-5xl text-secondary">Executive Team 2026</h2>
+            <h1>Coming soon</h1>
           </div>
           {isAdmin && (
             <button

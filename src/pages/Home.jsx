@@ -65,7 +65,7 @@ export default function Home() {
           className="absolute inset-0 w-full h-full object-cover object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-black/50 to-transparent" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pb-20 md:pb-28 w-full">
           <p className="fade-up fade-up-delay-1 font-display text-xs tracking-[0.4em] text-shade1 uppercase mb-4">
