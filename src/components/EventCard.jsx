@@ -4,12 +4,14 @@ const TYPE_LABELS = {
   'Lecture':                   'Lecture',
 }
 
+const TZ = 'Australia/Sydney'
+
 function formatDate(isoString) {
   const d = new Date(isoString)
   return {
-    day:  d.toLocaleDateString('en-AU', { weekday: 'short' }),
-    date: d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }),
-    time: d.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true }),
+    day:  d.toLocaleDateString('en-AU',  { timeZone: TZ, weekday: 'short' }),
+    date: d.toLocaleDateString('en-AU',  { timeZone: TZ, day: 'numeric', month: 'short' }),
+    time: d.toLocaleTimeString('en-AU',  { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: true }),
   }
 }
 

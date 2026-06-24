@@ -2,25 +2,45 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const EVENT_TYPES = ['Discussion', 'Collaborative Discussion', 'Lecture']
+const TZ = 'Australia/Sydney'
+
+// Probes the DST-correct UTC offset for Australia/Sydney on the given date,
+// then returns a full ISO string that Supabase stores with the right offset.
+function toSydneyISO(dateStr, timeStr) {
+  const probe = new Date(`${dateStr}T12:00:00Z`)
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: TZ,
+    timeZoneName: 'shortOffset',
+  }).formatToParts(probe)
+  const tzPart = parts.find(p => p.type === 'timeZoneName')?.value ?? 'GMT+10'
+  const match = tzPart.match(/GMT([+-]\d+(?::\d+)?)/)
+  const raw = match?.[1] ?? '+10'
+  const offset = raw.includes(':') ? raw : `${raw}:00`
+  return `${dateStr}T${timeStr}:00${offset}`
+}
 
 function blankForm() {
   return { title: '', week: '', type: 'Discussion', date: '', time: '17:00', location: '', instagram_post: '' }
 }
 
+// Extracts date + time in Sydney local time so the edit form always shows the
+// correct wall-clock values regardless of the admin's machine timezone.
 function formFromEvent(event) {
   const d = new Date(event.date)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const hours = String(d.getHours()).padStart(2, '0')
-  const minutes = String(d.getMinutes()).padStart(2, '0')
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: TZ,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+    hour12: false,
+  }).formatToParts(d)
+  const get = type => parts.find(p => p.type === type)?.value ?? ''
   return {
-    title: event.title ?? '',
-    week: event.week?.toString() ?? '',
-    type: event.type ?? 'Discussion',
-    date: `${year}-${month}-${day}`,
-    time: `${hours}:${minutes}`,
-    location: event.location ?? '',
+    title:          event.title          ?? '',
+    week:           event.week?.toString() ?? '',
+    type:           event.type           ?? 'Discussion',
+    date:           `${get('year')}-${get('month')}-${get('day')}`,
+    time:           `${get('hour')}:${get('minute')}`,
+    location:       event.location       ?? '',
     instagram_post: event.instagram_post ?? '',
   }
 }
@@ -74,7 +94,7 @@ export default function AddEventModal({ onClose, onEventAdded, event = null }) {
         week:           parseInt(form.week),
         type:           form.type,
         title:          form.title,
-        date:           `${form.date}T${form.time}:00`,
+        date:           toSydneyISO(form.date, form.time),
         location:       form.location,
         building:       'University of New South Wales',
         image_url,
