@@ -1,58 +1,52 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import heroBanner from '../assets/banner-school-of-athens.jpg'
 import deathOfSocrates from '../assets/banner-death-of-socrates.jpg'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
+import { getCurrentTerm } from '../lib/utils'
 import EventCard from '../components/EventCard.jsx'
+import EventDetailModal from '../components/EventDetailModal.jsx'
+import AddEventModal from '../components/AddEventModal.jsx'
 
 export default function Home() {
-  const [weekEvents, setWeekEvents] = useState([])
-  const [currentWeek, setCurrentWeek] = useState(null)
+  const { user } = useAuth()
+  const [weekEvents, setWeekEvents]       = useState([])
+  const [currentWeek, setCurrentWeek]     = useState(null)
+  const [selectedEvent, setSelectedEvent] = useState(null)
+  const [editingEvent, setEditingEvent]   = useState(null)
 
-  useEffect(() => {
-    const fetchWeekEvents = async () => {
-      // Start of current calendar week (Monday 00:00 local time)
-      const now = new Date()
-      const dayOfWeek = now.getDay() // 0 = Sun
-      const monday = new Date(now)
-      monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
-      monday.setHours(0, 0, 0, 0)
+  const currentTerm = getCurrentTerm()
 
-      // Find the week number of the first event on or after Monday this week
-      let { data: anchor } = await supabase
-        .from('events')
-        .select('week')
-        .gte('date', monday.toISOString())
-        .order('date', { ascending: true })
-        .limit(1)
+  const fetchUpcoming = useCallback(async () => {
+    const now = new Date().toISOString()
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('term', currentTerm)
+      .gte('date', now)
+      .order('date', { ascending: true })
 
-      let weekNum = anchor?.[0]?.week
-
-      // If nothing this week or later, fall back to the most recent past week
-      if (!weekNum) {
-        let { data: past } = await supabase
-          .from('events')
-          .select('week')
-          .lt('date', monday.toISOString())
-          .order('date', { ascending: false })
-          .limit(1)
-        weekNum = past?.[0]?.week
-      }
-
-      if (!weekNum) return
-
-      // Fetch all events for that term week
-      const { data } = await supabase
-        .from('events')
-        .select('*')
-        .eq('week', weekNum)
-        .order('date', { ascending: true })
-
-      setCurrentWeek(weekNum)
-      setWeekEvents(data ?? [])
+    if (error || !data?.length) {
+      setWeekEvents([])
+      setCurrentWeek(null)
+      return
     }
-    fetchWeekEvents()
-  }, [])
+
+    // Show all events from the same week as the earliest upcoming event
+    const firstWeek = data[0].week
+    setCurrentWeek(firstWeek)
+    setWeekEvents(data.filter(e => e.week === firstWeek))
+  }, [currentTerm])
+
+  useEffect(() => { fetchUpcoming() }, [fetchUpcoming])
+
+  const handleDelete = async id => {
+    if (!confirm('Delete this event? This cannot be undone.')) return
+    if (selectedEvent?.id === id) setSelectedEvent(null)
+    await supabase.from('events').delete().eq('id', id)
+    fetchUpcoming()
+  }
 
   return (
     <div className="flex flex-col">
@@ -68,7 +62,8 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-black via-black/50 to-transparent" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pb-20 md:pb-28 w-full">
-          <p className="fade-up fade-up-delay-1 font-display text-xs tracking-[0.4em] text-shade1 uppercase mb-4">
+          {/* Subtle backdrop behind the small subtitle line for readability */}
+          <p className="fade-up fade-up-delay-1 font-display text-xs tracking-[0.4em] text-secondary/90 uppercase mb-4 drop-shadow-[0_1px_8px_rgba(0,0,0,0.9)]">
             University of New South Wales · Est. 2025
           </p>
           <h1 className="fade-up fade-up-delay-2 font-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-secondary leading-none tracking-wide mb-6">
@@ -119,7 +114,7 @@ export default function Home() {
         <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
           <div>
             <p className="font-display text-[11px] tracking-[0.35em] text-accent uppercase mb-3">
-              {currentWeek ? `Week ${currentWeek}` : 'This Term'}
+              {currentWeek ? `Week ${currentWeek} · ${currentTerm}` : currentTerm}
             </p>
             <h2 className="font-serif text-4xl md:text-5xl text-secondary">This Week</h2>
           </div>
@@ -134,11 +129,19 @@ export default function Home() {
         {weekEvents.length > 0 ? (
           <div className={`grid gap-8 ${weekEvents.length === 1 ? 'max-w-lg' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
             {weekEvents.map(event => (
-              <EventCard key={event.id} event={event} />
+              <EventCard
+                key={event.id}
+                event={event}
+                onSelect={() => setSelectedEvent(event)}
+                onDelete={user ? () => handleDelete(event.id) : null}
+                onEdit={user ? () => setEditingEvent(event) : null}
+              />
             ))}
           </div>
         ) : (
-          <p className="font-serif text-xl text-shade1 italic">No events scheduled yet.</p>
+          <p className="font-serif text-xl text-shade1 italic">
+            No upcoming events — check back soon.
+          </p>
         )}
       </section>
 
@@ -171,6 +174,24 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Event detail modal ───────────────────── */}
+      {selectedEvent && (
+        <EventDetailModal
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          onEdit={user ? () => { setEditingEvent(selectedEvent); setSelectedEvent(null) } : null}
+          onDelete={user ? () => handleDelete(selectedEvent.id) : null}
+        />
+      )}
+
+      {/* ── Edit event modal ─────────────────────── */}
+      {editingEvent && (
+        <AddEventModal
+          event={editingEvent}
+          onClose={() => setEditingEvent(null)}
+          onEventAdded={fetchUpcoming}
+        />
+      )}
     </div>
   )
 }

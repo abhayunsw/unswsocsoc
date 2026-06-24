@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { getCurrentTerm } from '../lib/utils'
 
-const EVENT_TYPES = ['Discussion', 'Collaborative Discussion', 'Lecture']
+const EVENT_TYPES = ['Discussion', 'Collaborative Discussion', 'Lecture', 'Meeting', 'Debate']
 const TZ = 'Australia/Sydney'
 
 // Probes the DST-correct UTC offset for Australia/Sydney on the given date,
@@ -20,7 +21,12 @@ function toSydneyISO(dateStr, timeStr) {
 }
 
 function blankForm() {
-  return { title: '', week: '', type: 'Discussion', date: '', time: '17:00', location: '', instagram_post: '' }
+  return {
+    title: '', week: '', type: 'Discussion',
+    date: '', time: '17:00', location: '',
+    instagram_post: '', caption: '', facebook_post: '',
+    term: getCurrentTerm(),
+  }
 }
 
 // Extracts date + time in Sydney local time so the edit form always shows the
@@ -42,6 +48,9 @@ function formFromEvent(event) {
     time:           `${get('hour')}:${get('minute')}`,
     location:       event.location       ?? '',
     instagram_post: event.instagram_post ?? '',
+    caption:        event.caption        ?? '',
+    facebook_post:  event.facebook_post  ?? '',
+    term:           event.term           ?? getCurrentTerm(),
   }
 }
 
@@ -99,7 +108,10 @@ export default function AddEventModal({ onClose, onEventAdded, event = null }) {
         building:       'University of New South Wales',
         image_url,
         question_doc,
-        instagram_post: form.instagram_post || null,
+        instagram_post: form.instagram_post  || null,
+        caption:        form.caption         || null,
+        facebook_post:  form.facebook_post   || null,
+        term:           form.term            || null,
       }
 
       if (isEdit) {
@@ -122,11 +134,26 @@ export default function AddEventModal({ onClose, onEventAdded, event = null }) {
   const inputClass =
     'w-full bg-transparent border border-white/20 px-4 py-2.5 text-secondary font-serif text-sm focus:outline-none focus:border-white/40 transition-colors placeholder:text-shade1/40'
 
+  // Date/time inputs get an extra class so we can target the webkit picker icon
+  const dateTimeClass = `${inputClass} picker-input`
+
   const labelClass =
     'font-sans text-[11px] tracking-[0.2em] text-shade1 uppercase block mb-2'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      {/* Make the browser-native calendar/clock icons cream-coloured on dark background */}
+      <style>{`
+        .picker-input { color-scheme: dark; }
+        .picker-input::-webkit-calendar-picker-indicator {
+          filter: brightness(0) invert(1);
+          opacity: 0.65;
+          cursor: pointer;
+        }
+        .picker-input::-webkit-calendar-picker-indicator:hover {
+          opacity: 1;
+        }
+      `}</style>
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
       <div className="relative bg-[#080808] border border-white/10 w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -172,15 +199,26 @@ export default function AddEventModal({ onClose, onEventAdded, event = null }) {
               />
             </div>
             <div>
-              <label className={labelClass}>Type</label>
-              <select
-                value={form.type}
-                onChange={set('type')}
-                className="w-full bg-[#080808] border border-white/20 px-4 py-2.5 text-secondary font-sans text-xs tracking-wider focus:outline-none focus:border-white/40 transition-colors"
-              >
-                {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
-              </select>
+              <label className={labelClass}>Term</label>
+              <input
+                type="text"
+                value={form.term}
+                onChange={set('term')}
+                placeholder="26T2"
+                className={inputClass}
+              />
             </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Type</label>
+            <select
+              value={form.type}
+              onChange={set('type')}
+              className="w-full bg-[#080808] border border-white/20 px-4 py-2.5 text-secondary font-sans text-xs tracking-wider focus:outline-none focus:border-white/40 transition-colors"
+            >
+              {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -191,7 +229,7 @@ export default function AddEventModal({ onClose, onEventAdded, event = null }) {
                 required
                 value={form.date}
                 onChange={set('date')}
-                className={inputClass}
+                className={dateTimeClass}
               />
             </div>
             <div>
@@ -201,7 +239,7 @@ export default function AddEventModal({ onClose, onEventAdded, event = null }) {
                 required
                 value={form.time}
                 onChange={set('time')}
-                className={inputClass}
+                className={dateTimeClass}
               />
             </div>
           </div>
@@ -219,12 +257,34 @@ export default function AddEventModal({ onClose, onEventAdded, event = null }) {
           </div>
 
           <div>
+            <label className={labelClass}>Event Caption</label>
+            <textarea
+              value={form.caption}
+              onChange={set('caption')}
+              placeholder="Paste Facebook event description here"
+              rows={5}
+              className={`${inputClass} resize-y`}
+            />
+          </div>
+
+          <div>
             <label className={labelClass}>Instagram Post URL</label>
             <input
               type="url"
               value={form.instagram_post}
               onChange={set('instagram_post')}
               placeholder="https://www.instagram.com/p/…"
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>Facebook Post URL</label>
+            <input
+              type="url"
+              value={form.facebook_post}
+              onChange={set('facebook_post')}
+              placeholder="https://www.facebook.com/events/…"
               className={inputClass}
             />
           </div>

@@ -1,7 +1,9 @@
 const TYPE_LABELS = {
-  'Discussion':               'Discussion',
-  'Collaborative Discussion':  'Collab',
-  'Lecture':                   'Lecture',
+  'Discussion':              'Discussion',
+  'Collaborative Discussion': 'Collab',
+  'Lecture':                 'Lecture',
+  'Meeting':                 'Meeting',
+  'Debate':                  'Debate',
 }
 
 const TZ = 'Australia/Sydney'
@@ -9,9 +11,9 @@ const TZ = 'Australia/Sydney'
 function formatDate(isoString) {
   const d = new Date(isoString)
   return {
-    day:  d.toLocaleDateString('en-AU',  { timeZone: TZ, weekday: 'short' }),
-    date: d.toLocaleDateString('en-AU',  { timeZone: TZ, day: 'numeric', month: 'short' }),
-    time: d.toLocaleTimeString('en-AU',  { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: true }),
+    day:  d.toLocaleDateString('en-AU', { timeZone: TZ, weekday: 'short' }),
+    date: d.toLocaleDateString('en-AU', { timeZone: TZ, day: 'numeric', month: 'short' }),
+    time: d.toLocaleTimeString('en-AU', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: true }),
   }
 }
 
@@ -19,12 +21,15 @@ function isReleased(isoString) {
   return new Date() >= new Date(isoString)
 }
 
-export default function EventCard({ event, onDelete, onEdit }) {
+export default function EventCard({ event, onSelect, onDelete, onEdit }) {
   const { day, date, time } = formatDate(event.date)
   const released = isReleased(event.date)
 
   return (
-    <div className="event-card group relative overflow-hidden bg-shade2/20 border border-white/10 flex flex-col">
+    <div
+      className="event-card group relative overflow-hidden bg-shade2/20 border border-white/10 flex flex-col cursor-pointer"
+      onClick={onSelect}
+    >
 
       {/* Poster image */}
       <div className="relative overflow-hidden aspect-[3/4]">
@@ -32,7 +37,7 @@ export default function EventCard({ event, onDelete, onEdit }) {
           <img
             src={event.image_url}
             alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
           />
         ) : (
           <div className="w-full h-full bg-shade2/40 flex items-center justify-center">
@@ -40,24 +45,22 @@ export default function EventCard({ event, onDelete, onEdit }) {
           </div>
         )}
 
+        {/* Bottom-to-top gradient for badge legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-        {/* Week + type badge */}
-        <div className="absolute top-4 left-4 flex gap-2">
-          <span className="font-display text-[10px] tracking-[0.2em] text-secondary bg-accent px-3 py-1">
-            WEEK {event.week}
-          </span>
-          <span className="font-display text-[10px] tracking-[0.2em] text-shade1 bg-black/60 border border-white/10 px-3 py-1">
-            {TYPE_LABELS[event.type] || event.type}
+        {/* Combined week + type badge — bottom left */}
+        <div className="absolute bottom-4 left-4">
+          <span className="font-display text-[10px] tracking-[0.2em] text-secondary bg-black/70 border border-white/10 px-3 py-1">
+            WEEK {event.week} · {TYPE_LABELS[event.type] || event.type}
           </span>
         </div>
 
-        {/* Admin controls */}
+        {/* Admin controls — top right, stop propagation so they don't open the modal */}
         {(onEdit || onDelete) && (
-          <div className="absolute top-4 right-4 flex gap-2">
+          <div className="absolute top-4 right-4 flex gap-2 z-10">
             {onEdit && (
               <button
-                onClick={onEdit}
+                onClick={e => { e.stopPropagation(); onEdit() }}
                 className="font-sans text-[10px] tracking-widest uppercase text-shade1 hover:text-secondary bg-black/80 border border-white/10 hover:border-secondary/30 px-3 py-1 transition-all duration-200"
               >
                 Edit
@@ -65,7 +68,7 @@ export default function EventCard({ event, onDelete, onEdit }) {
             )}
             {onDelete && (
               <button
-                onClick={onDelete}
+                onClick={e => { e.stopPropagation(); onDelete() }}
                 className="font-sans text-[10px] tracking-widest uppercase text-shade1 hover:text-secondary bg-black/80 border border-white/10 hover:border-secondary/30 px-3 py-1 transition-all duration-200"
               >
                 Delete
@@ -100,6 +103,7 @@ export default function EventCard({ event, onDelete, onEdit }) {
               href={event.question_doc}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
               className="inline-flex items-center gap-2 font-sans text-xs tracking-[0.2em] uppercase text-secondary hover:text-accent border border-secondary/30 hover:border-accent px-4 py-2.5 transition-all duration-300"
             >
               <span>↓</span>
@@ -118,6 +122,7 @@ export default function EventCard({ event, onDelete, onEdit }) {
               href={event.instagram_post}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
               className="mt-3 inline-flex items-center gap-2 font-sans text-[11px] tracking-widest text-shade1 hover:text-secondary uppercase transition-colors"
             >
               View on Instagram →
