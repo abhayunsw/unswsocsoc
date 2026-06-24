@@ -27,7 +27,7 @@ export default function EventCard({ event, onDelete, onEdit }) {
     <div className="event-card group relative overflow-hidden bg-shade2/20 border border-white/10 flex flex-col">
 
       {/* Poster image */}
-      <div className="relative overflow-hidden aspect-video">
+      <div className="relative overflow-hidden aspect-[3/4]">
         {event.image_url ? (
           <img
             src={event.image_url}
