@@ -16,7 +16,10 @@ function formatDateTime(isoString) {
 export default function EventDetailModal({ event, onClose, onEdit, onDelete }) {
   const { user } = useAuth()
   const { weekday, day, month, year, time } = formatDateTime(event.date)
-  const released = new Date() >= new Date(event.date)
+  // Released on the calendar day of the event (Sydney time), not after the start time
+  const nowDate   = new Date().toLocaleDateString('en-CA', { timeZone: TZ })
+  const eventDate = new Date(event.date).toLocaleDateString('en-CA', { timeZone: TZ })
+  const released  = nowDate >= eventDate
 
   return (
     <div

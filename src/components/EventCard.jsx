@@ -18,7 +18,10 @@ function formatDate(isoString) {
 }
 
 function isReleased(isoString) {
-  return new Date() >= new Date(isoString)
+  // Released on the calendar day of the event (Sydney time), not after the start time
+  const nowDate   = new Date().toLocaleDateString('en-CA', { timeZone: TZ })
+  const eventDate = new Date(isoString).toLocaleDateString('en-CA', { timeZone: TZ })
+  return nowDate >= eventDate
 }
 
 export default function EventCard({ event, onSelect, onDelete, onEdit }) {
