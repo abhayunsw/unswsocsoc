@@ -111,10 +111,10 @@ export default function Events() {
             { n: '03', label: 'The Dialogue', desc: 'No lectures, no right answers. Just honest inquiry in the tradition of Socrates.' },
           ].map(({ n, label, desc }) => (
             <div key={n} className="flex gap-5">
-              <span className="font-display text-3xl text-accent/40 leading-none mt-1">{n}</span>
+              <span className="font-display text-3xl text-accent/70 leading-none mt-1">{n}</span>
               <div>
                 <p className="font-display text-xs tracking-[0.2em] text-secondary uppercase mb-2">{label}</p>
-                <p className="font-serif text-shade1 text-sm leading-relaxed">{desc}</p>
+                <p className="font-serif text-secondary/70 text-sm leading-relaxed">{desc}</p>
               </div>
             </div>
           ))}
