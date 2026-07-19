@@ -102,7 +102,6 @@ export default function About() {
           <div>
             <p className="font-display text-[11px] tracking-[0.35em] text-accent uppercase mb-3">The People</p>
             <h2 className="font-serif text-3xl md:text-5xl text-secondary">Executive Team 2026</h2>
-            <h1>Coming soon</h1>
           </div>
           {isAdmin && (
             <button
