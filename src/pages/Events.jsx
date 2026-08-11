@@ -1,25 +1,38 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { getCurrentTerm } from '../lib/utils'
+import { getCurrentTerm, getTermState } from '../lib/termCalendar'
 import EventCard from '../components/EventCard.jsx'
 import EventDetailModal from '../components/EventDetailModal.jsx'
 import AddEventModal from '../components/AddEventModal.jsx'
+import TermWrapMessage from '../components/TermWrapMessage.jsx'
 
 // "26T2" → "262" for sort comparison (newest first = descending)
 const termSortKey = t => t.slice(0, 2) + t.slice(3)
 
 export default function Events() {
   const { user } = useAuth()
+  const [searchParams] = useSearchParams()
+  const { hash } = useLocation()
   const [events, setEvents]           = useState([])
   const [loading, setLoading]         = useState(true)
   const [showModal, setShowModal]     = useState(false)
   const [editingEvent, setEditingEvent] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
-  const [showPast, setShowPast]       = useState(false)
 
+  const termState   = getTermState()
   const currentTerm = getCurrentTerm()
-  const [selectedTerm, setSelectedTerm] = useState(currentTerm)
+  const isBetween   = termState.state === 'between'
+
+  // Between terms the past-events section opens by default; a ?past=1 link
+  // (from the homepage wrap message) forces it open in any state.
+  const [showPast, setShowPast] = useState(
+    isBetween || searchParams.get('past') === '1'
+  )
+  const [selectedTerm, setSelectedTerm] = useState(
+    searchParams.get('term') || currentTerm
+  )
 
   const fetchEvents = useCallback(async () => {
     const { data, error } = await supabase
@@ -31,6 +44,13 @@ export default function Events() {
   }, [])
 
   useEffect(() => { fetchEvents() }, [fetchEvents])
+
+  // Scroll to #past-events once the list has rendered — React Router does not
+  // handle hash anchors for content that mounts after navigation.
+  useEffect(() => {
+    if (loading || hash !== '#past-events') return
+    document.getElementById('past-events')?.scrollIntoView({ behavior: 'smooth' })
+  }, [loading, hash])
 
   // Build sorted unique term list — always include currentTerm so it's selectable
   const allTerms = [
@@ -52,7 +72,8 @@ export default function Events() {
 
   const handleTermChange = t => {
     setSelectedTerm(t)
-    setShowPast(false)
+    // Keep past events expanded for the wrapped-up term, collapse for others
+    setShowPast(isBetween && t === termState.currentTerm)
   }
 
   return (
@@ -65,9 +86,13 @@ export default function Events() {
             <p className="font-display text-[11px] tracking-[0.35em] text-accent uppercase mb-3">
               {selectedTerm}
             </p>
-            <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl text-secondary mb-4">Upcoming Events</h1>
+            <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl text-secondary mb-4">
+              {isBetween && selectedTerm === termState.currentTerm ? 'Events' : 'Upcoming Events'}
+            </h1>
             <p className="font-serif text-lg text-shade1 italic max-w-xl">
-              Join us each week as we tackle a new question. No experience in philosophy required — only curiosity.
+              {isBetween && selectedTerm === termState.currentTerm
+                ? `A term of questions, in full. Browse everything we discussed in ${termState.currentTerm}.`
+                : 'Join us each week as we tackle a new question. No experience in philosophy required — only curiosity.'}
             </p>
           </div>
 
@@ -127,14 +152,30 @@ export default function Events() {
           <p className="font-serif text-xl text-shade1 italic text-center py-20">Loading…</p>
 
         ) : termEvents.length === 0 ? (
-          <p className="font-serif text-xl text-shade1 italic text-center py-20">
-            No events recorded for this term.
-          </p>
+          isBetween && selectedTerm === termState.currentTerm ? (
+            <TermWrapMessage
+              variant="compact"
+              currentTerm={termState.currentTerm}
+              nextTerm={termState.nextTerm}
+            />
+          ) : (
+            <p className="font-serif text-xl text-shade1 italic text-center py-20">
+              No events recorded for this term.
+            </p>
+          )
 
         ) : (
           <>
-            {/* Upcoming events */}
-            {upcoming.length > 0 ? (
+            {/* Upcoming events — replaced by the wrap message between terms */}
+            {isBetween && selectedTerm === termState.currentTerm ? (
+              <div className="mb-8">
+                <TermWrapMessage
+                  variant="compact"
+                  currentTerm={termState.currentTerm}
+                  nextTerm={termState.nextTerm}
+                />
+              </div>
+            ) : upcoming.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
                 {upcoming.map(event => (
                   <EventCard
@@ -165,7 +206,7 @@ export default function Events() {
 
             {/* Past events — collapsible */}
             {past.length > 0 && (
-              <div className="border-t border-white/10 pt-10">
+              <div id="past-events" className="border-t border-white/10 pt-10 scroll-mt-24">
                 <button
                   onClick={() => setShowPast(p => !p)}
                   className="flex items-center gap-3 mb-8 group"

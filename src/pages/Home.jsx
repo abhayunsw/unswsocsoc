@@ -4,10 +4,11 @@ import heroBanner from '../assets/banner-school-of-athens.jpg'
 import deathOfSocrates from '../assets/banner-death-of-socrates.jpg'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { getCurrentTerm } from '../lib/utils'
+import { getCurrentTerm, getTermState } from '../lib/termCalendar'
 import EventCard from '../components/EventCard.jsx'
 import EventDetailModal from '../components/EventDetailModal.jsx'
 import AddEventModal from '../components/AddEventModal.jsx'
+import TermWrapMessage from '../components/TermWrapMessage.jsx'
 
 export default function Home() {
   const { user } = useAuth()
@@ -16,6 +17,7 @@ export default function Home() {
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [editingEvent, setEditingEvent]   = useState(null)
 
+  const termState   = getTermState()
   const currentTerm = getCurrentTerm()
 
   const fetchUpcoming = useCallback(async () => {
@@ -109,41 +111,52 @@ export default function Home() {
         `}</style>
       </section>
 
-      {/* ── This week's events ───────────────────── */}
-      <section className="py-16 md:py-32 px-6 md:px-12 max-w-7xl mx-auto w-full">
-        <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
-          <div>
-            <p className="font-display text-[11px] tracking-[0.35em] text-accent uppercase mb-3">
-              {currentWeek ? `Week ${currentWeek} · ${currentTerm}` : currentTerm}
-            </p>
-            <h2 className="font-serif text-4xl md:text-5xl text-secondary">This Week</h2>
+      {/* ── This week's events / end-of-term wrap ── */}
+      {termState.state === 'between' ? (
+        <section className="py-16 md:py-24 px-6 md:px-12 max-w-7xl mx-auto w-full">
+          <TermWrapMessage
+            currentTerm={termState.currentTerm}
+            nextTerm={termState.nextTerm}
+          />
+        </section>
+      ) : (
+        <section className="py-16 md:py-32 px-6 md:px-12 max-w-7xl mx-auto w-full">
+          <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
+            <div>
+              <p className="font-display text-[11px] tracking-[0.35em] text-accent uppercase mb-3">
+                {currentWeek ? `Week ${currentWeek} · ${currentTerm}` : currentTerm}
+              </p>
+              <h2 className="font-serif text-4xl md:text-5xl text-secondary">This Week</h2>
+            </div>
+            <Link
+              to="/events"
+              className="font-sans text-xs tracking-[0.2em] uppercase text-shade1 hover:text-secondary transition-colors"
+            >
+              All Events →
+            </Link>
           </div>
-          <Link
-            to="/events"
-            className="font-sans text-xs tracking-[0.2em] uppercase text-shade1 hover:text-secondary transition-colors"
-          >
-            All Events →
-          </Link>
-        </div>
 
-        {weekEvents.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {weekEvents.map(event => (
-              <EventCard
-                key={event.id}
-                event={event}
-                onSelect={() => setSelectedEvent(event)}
-                onDelete={user ? () => handleDelete(event.id) : null}
-                onEdit={user ? () => setEditingEvent(event) : null}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="font-serif text-xl text-shade1 italic">
-            No upcoming events — check back soon.
-          </p>
-        )}
-      </section>
+          {weekEvents.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {weekEvents.map(event => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  onSelect={() => setSelectedEvent(event)}
+                  onDelete={user ? () => handleDelete(event.id) : null}
+                  onEdit={user ? () => setEditingEvent(event) : null}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="font-serif text-xl text-shade1 italic">
+              {termState.state === 'unknown'
+                ? 'Stay tuned for upcoming events.'
+                : 'No upcoming events — check back soon.'}
+            </p>
+          )}
+        </section>
+      )}
 
       {/* ── About strip with Death of Socrates ───── */}
       <section className="relative overflow-hidden">

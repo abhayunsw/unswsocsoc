@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node C:/Users/hadez/AppData/Local/Temp/claude/c--Users-hadez-Documents-SocSoc-socsoc-website/b732d186-a32b-4cdd-85f8-17c3b57714df/scratchpad/t.mjs)",
+      "Bash(node \"C:/Users/hadez/AppData/Local/Temp/claude/c--Users-hadez-Documents-SocSoc-socsoc-website/b732d186-a32b-4cdd-85f8-17c3b57714df/scratchpad/t.mjs\")"
+    ]
+  }
+}

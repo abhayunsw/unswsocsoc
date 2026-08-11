@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { getCurrentTerm } from '../lib/utils'
+import { getCurrentTerm } from '../lib/termCalendar'
 
 const EVENT_TYPES = ['Discussion', 'Collaborative Discussion', 'Lecture', 'Meeting', 'Debate']
 const TZ = 'Australia/Sydney'
