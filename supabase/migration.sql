@@ -72,6 +72,15 @@ insert into public.events (week, type, title, date, location) values
 --    Set a strong password there — do NOT store passwords in SQL.
 
 -- ============================================================
+-- NEW: Structured discussion questions — run in a new SQL Editor tab
+-- ============================================================
+
+-- Parsed handout structure rendered by DiscussionViewer.jsx.
+-- question_doc keeps holding the original .docx URL for the download button.
+alter table public.events
+  add column if not exists question_json jsonb;
+
+-- ============================================================
 -- NEW: Team table — run this section in a new SQL Editor tab
 -- ============================================================
 

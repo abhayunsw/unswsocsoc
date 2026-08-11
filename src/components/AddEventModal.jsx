@@ -62,7 +62,49 @@ export default function AddEventModal({ onClose, onEventAdded, event = null }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  // Structured questions parsed from the uploaded .docx, previewed before save
+  const [questionJson, setQuestionJson] = useState(isEdit ? event.question_json ?? null : null)
+  const [parsing, setParsing]           = useState(false)
+  const [parseError, setParseError]     = useState(null)
+
   const set = key => e => setForm(f => ({ ...f, [key]: e.target.value }))
+
+  // Extracts raw text from the .docx in-browser, then sends it to the
+  // parse-questions Edge Function (which holds the Anthropic key server-side).
+  const handleQuestionFile = async file => {
+    setQuestionFile(file)
+    setParseError(null)
+    if (!file) { setQuestionJson(null); return }
+
+    if (!file.name.toLowerCase().endsWith('.docx')) {
+      // PDFs and .doc still upload for the download button, just no viewer
+      setQuestionJson(null)
+      return
+    }
+
+    setParsing(true)
+    try {
+      // Loaded on demand — mammoth is ~500KB and only admins ever need it
+      const mammoth = await import('mammoth/mammoth.browser')
+      const buffer = await file.arrayBuffer()
+      const { value: text } = await mammoth.extractRawText({ arrayBuffer: buffer })
+      if (!text?.trim()) throw new Error('No text found in that document.')
+
+      const { data, error: fnErr } = await supabase.functions.invoke('parse-questions', {
+        body: { text },
+      })
+      if (fnErr) throw fnErr
+      if (data?.error) throw new Error(data.error)
+      if (!data?.thinkers?.length) throw new Error('No thinker sections were found.')
+
+      setQuestionJson(data)
+    } catch (err) {
+      setQuestionJson(null)
+      setParseError(err.message ?? 'Could not parse that document.')
+    } finally {
+      setParsing(false)
+    }
+  }
 
   const handleSubmit = async e => {
     e.preventDefault()
@@ -108,6 +150,7 @@ export default function AddEventModal({ onClose, onEventAdded, event = null }) {
         building:       'University of New South Wales',
         image_url,
         question_doc,
+        question_json: questionJson,
         instagram_post: form.instagram_post  || null,
         caption:        form.caption         || null,
         facebook_post:  form.facebook_post   || null,
@@ -313,7 +356,7 @@ export default function AddEventModal({ onClose, onEventAdded, event = null }) {
             <input
               type="file"
               accept=".pdf,.doc,.docx"
-              onChange={e => setQuestionFile(e.target.files[0])}
+              onChange={e => handleQuestionFile(e.target.files[0])}
               className="w-full font-sans text-xs text-shade1
                 file:mr-4 file:py-2 file:px-4
                 file:border file:border-white/20 file:bg-transparent
@@ -321,6 +364,65 @@ export default function AddEventModal({ onClose, onEventAdded, event = null }) {
                 file:uppercase file:cursor-pointer
                 hover:file:border-white/40 file:transition-colors"
             />
+
+            {parsing && (
+              <p className="font-sans text-[11px] tracking-widest text-shade1 uppercase mt-3">
+                Parsing document…
+              </p>
+            )}
+
+            {parseError && (
+              <p className="font-sans text-xs text-red-400 tracking-wide mt-3">
+                {parseError} — the file will still upload for download, but the
+                in-site viewer won't be available.
+              </p>
+            )}
+
+            {/* Parsed preview — verify before saving */}
+            {questionJson && !parsing && (
+              <div className="mt-4 border border-white/10 bg-black/40 px-4 py-4">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <p className="font-display text-[10px] tracking-[0.25em] text-accent uppercase mb-1">
+                      Parsed
+                    </p>
+                    <p className="font-serif text-sm text-secondary italic">
+                      {questionJson.topic}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setQuestionJson(null); setParseError(null) }}
+                    className="font-sans text-[10px] tracking-widest uppercase text-shade1 hover:text-secondary shrink-0"
+                  >
+                    Discard
+                  </button>
+                </div>
+
+                <ol className="flex flex-col gap-2">
+                  {questionJson.thinkers.map((t, i) => (
+                    <li key={i} className="flex items-baseline gap-3">
+                      <span className="font-display text-[10px] text-accent tabular-nums shrink-0">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <span className="font-serif text-sm text-secondary/85">
+                        {t.thinkerName}
+                        <span className="text-shade1">
+                          {' · '}{t.questions?.length ?? 0} question{t.questions?.length === 1 ? '' : 's'}
+                          {t.quote ? ' · quote' : ''}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+
+                {questionJson.finalQuestion && (
+                  <p className="font-serif text-xs text-shade1 italic mt-3 pt-3 border-t border-white/10">
+                    Closing: {questionJson.finalQuestion}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {error && (
@@ -330,7 +432,7 @@ export default function AddEventModal({ onClose, onEventAdded, event = null }) {
           <div className="flex gap-4 pt-2 border-t border-white/10 mt-2">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || parsing}
               className="font-sans text-xs tracking-[0.25em] uppercase text-primary bg-secondary hover:bg-secondary/90 px-8 py-3 transition-all duration-300 disabled:opacity-50"
             >
               {loading

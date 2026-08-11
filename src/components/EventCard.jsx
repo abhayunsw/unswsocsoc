@@ -24,9 +24,11 @@ function isReleased(isoString) {
   return nowDate >= eventDate
 }
 
-export default function EventCard({ event, onSelect, onDelete, onEdit }) {
+export default function EventCard({ event, onSelect, onDelete, onEdit, onOpenQuestions }) {
   const { day, date, time } = formatDate(event.date)
   const released = isReleased(event.date)
+  // Structured questions get the in-site viewer; a bare .docx still links out
+  const hasViewer = Boolean(event.question_json) && released
 
   return (
     <div
@@ -101,7 +103,14 @@ export default function EventCard({ event, onSelect, onDelete, onEdit }) {
         </h3>
 
         <div className="mt-auto pt-4 border-t border-white/10">
-          {event.question_doc && released ? (
+          {hasViewer ? (
+            <button
+              onClick={e => { e.stopPropagation(); onOpenQuestions?.(event) }}
+              className="inline-flex items-center gap-2 font-sans text-xs tracking-[0.2em] uppercase text-secondary hover:text-accent border border-secondary/30 hover:border-accent px-4 py-2.5 transition-all duration-300"
+            >
+              <span>Discussion Questions</span>
+            </button>
+          ) : event.question_doc && released ? (
             <a
               href={event.question_doc}
               target="_blank"

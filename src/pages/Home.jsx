@@ -9,6 +9,7 @@ import EventCard from '../components/EventCard.jsx'
 import EventDetailModal from '../components/EventDetailModal.jsx'
 import AddEventModal from '../components/AddEventModal.jsx'
 import TermWrapMessage from '../components/TermWrapMessage.jsx'
+import DiscussionViewer from '../components/DiscussionViewer.jsx'
 
 export default function Home() {
   const { user } = useAuth()
@@ -16,6 +17,7 @@ export default function Home() {
   const [currentWeek, setCurrentWeek]     = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [editingEvent, setEditingEvent]   = useState(null)
+  const [questionsEvent, setQuestionsEvent] = useState(null)
 
   const termState   = getTermState()
   const currentTerm = getCurrentTerm()
@@ -145,6 +147,7 @@ export default function Home() {
                   onSelect={() => setSelectedEvent(event)}
                   onDelete={user ? () => handleDelete(event.id) : null}
                   onEdit={user ? () => setEditingEvent(event) : null}
+                  onOpenQuestions={setQuestionsEvent}
                 />
               ))}
             </div>
@@ -194,6 +197,15 @@ export default function Home() {
           onClose={() => setSelectedEvent(null)}
           onEdit={user ? () => { setEditingEvent(selectedEvent); setSelectedEvent(null) } : null}
           onDelete={user ? () => handleDelete(selectedEvent.id) : null}
+          onOpenQuestions={setQuestionsEvent}
+        />
+      )}
+
+      {/* ── Discussion questions viewer ──────────── */}
+      {questionsEvent && (
+        <DiscussionViewer
+          event={questionsEvent}
+          onClose={() => setQuestionsEvent(null)}
         />
       )}
 

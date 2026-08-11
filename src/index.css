@@ -73,6 +73,13 @@ body {
   opacity: 0.35;
 }
 
+/* ── Hidden scrollbar (horizontal tab bars) ── */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 /* ── Event card hover ───────────────────── */
 .event-card {
   transition: transform 0.4s ease, box-shadow 0.4s ease;

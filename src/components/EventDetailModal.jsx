@@ -13,13 +13,15 @@ function formatDateTime(isoString) {
   }
 }
 
-export default function EventDetailModal({ event, onClose, onEdit, onDelete }) {
+export default function EventDetailModal({ event, onClose, onEdit, onDelete, onOpenQuestions }) {
   const { user } = useAuth()
   const { weekday, day, month, year, time } = formatDateTime(event.date)
   // Released on the calendar day of the event (Sydney time), not after the start time
   const nowDate   = new Date().toLocaleDateString('en-CA', { timeZone: TZ })
   const eventDate = new Date(event.date).toLocaleDateString('en-CA', { timeZone: TZ })
   const released  = nowDate >= eventDate
+  // Structured questions get the in-site viewer; a bare .docx still links out
+  const hasViewer = Boolean(event.question_json) && released
 
   return (
     <div
@@ -127,7 +129,15 @@ export default function EventDetailModal({ event, onClose, onEdit, onDelete }) {
 
           {/* Discussion questions + social links */}
           <div className="border-t border-white/10 pt-5 flex flex-col gap-4">
-            {event.question_doc && released && (
+            {hasViewer && (
+              <button
+                onClick={() => onOpenQuestions?.(event)}
+                className="inline-flex items-center gap-2 font-sans text-xs tracking-[0.2em] uppercase text-secondary hover:text-accent border border-secondary/30 hover:border-accent px-4 py-2.5 transition-all duration-300 w-fit"
+              >
+                <span>Discussion Questions</span>
+              </button>
+            )}
+            {!hasViewer && event.question_doc && released && (
               <a
                 href={event.question_doc}
                 target="_blank"

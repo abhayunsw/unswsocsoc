@@ -7,6 +7,7 @@ import EventCard from '../components/EventCard.jsx'
 import EventDetailModal from '../components/EventDetailModal.jsx'
 import AddEventModal from '../components/AddEventModal.jsx'
 import TermWrapMessage from '../components/TermWrapMessage.jsx'
+import DiscussionViewer from '../components/DiscussionViewer.jsx'
 
 // "26T2" → "262" for sort comparison (newest first = descending)
 const termSortKey = t => t.slice(0, 2) + t.slice(3)
@@ -20,6 +21,7 @@ export default function Events() {
   const [showModal, setShowModal]     = useState(false)
   const [editingEvent, setEditingEvent] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
+  const [questionsEvent, setQuestionsEvent] = useState(null)
 
   const termState   = getTermState()
   const currentTerm = getCurrentTerm()
@@ -184,6 +186,7 @@ export default function Events() {
                     onSelect={() => setSelectedEvent(event)}
                     onDelete={user ? () => handleDelete(event.id) : null}
                     onEdit={user ? () => setEditingEvent(event) : null}
+                    onOpenQuestions={setQuestionsEvent}
                   />
                 ))}
               </div>
@@ -231,6 +234,7 @@ export default function Events() {
                         onSelect={() => setSelectedEvent(event)}
                         onDelete={user ? () => handleDelete(event.id) : null}
                         onEdit={user ? () => setEditingEvent(event) : null}
+                        onOpenQuestions={setQuestionsEvent}
                       />
                     ))}
                   </div>
@@ -248,6 +252,15 @@ export default function Events() {
           onClose={() => setSelectedEvent(null)}
           onEdit={user ? () => { setEditingEvent(selectedEvent); setSelectedEvent(null) } : null}
           onDelete={user ? () => handleDelete(selectedEvent.id) : null}
+          onOpenQuestions={setQuestionsEvent}
+        />
+      )}
+
+      {/* ── Discussion questions viewer ──────────── */}
+      {questionsEvent && (
+        <DiscussionViewer
+          event={questionsEvent}
+          onClose={() => setQuestionsEvent(null)}
         />
       )}
 
